@@ -8,9 +8,9 @@ Wants=network-online.target
 Type=simple
 User=__USER__
 WorkingDirectory=__POCKETSCAN_DIR__
-ExecStart=/usr/bin/python3 bot/main.py
+ExecStart=/usr/bin/python3 -m bot.main
 EnvironmentFile=__POCKETSCAN_DIR__/.env
-# Include ~/.local/bin so pip --user installed packages are found
+Environment=PYTHONPATH=__POCKETSCAN_DIR__
 Environment=PATH=/home/__USER__/.local/bin:/usr/local/bin:/usr/bin:/bin
 Restart=always
 RestartSec=5
