@@ -19,6 +19,7 @@ echo "[1/5] Installing system packages..."
 sudo apt-get update -qq
 sudo apt-get install -y --no-install-recommends \
     python3-pip \
+    python3-venv \
     python3-picamera2 \
     v4l-utils \
     git \
@@ -34,14 +35,18 @@ if ! grep -q "imx519" "$CONFIG_FILE"; then
     echo "# IMX519 autofocus camera" | sudo tee -a "$CONFIG_FILE"
     echo "dtoverlay=imx519" | sudo tee -a "$CONFIG_FILE"
     echo "camera_auto_detect=0" | sudo tee -a "$CONFIG_FILE"
-    echo "  → Overlay added. A REBOOT is required after setup."
+    echo "  Overlay added. A REBOOT is required after setup."
 else
-    echo "[2/5] IMX519 overlay already in $CONFIG_FILE — skipping."
+    echo "[2/5] IMX519 overlay already in $CONFIG_FILE -- skipping."
 fi
 
-# ── 3. Python dependencies ────────────────────────────────────
-echo "[3/5] Installing Python packages..."
-pip3 install --break-system-packages -r "$POCKETSCAN_DIR/requirements.txt"
+# ── 3. Python virtual environment + dependencies ──────────────
+echo "[3/5] Creating Python virtual environment..."
+python3 -m venv --system-site-packages "$POCKETSCAN_DIR/venv"
+
+echo "      Installing Python packages into venv..."
+"$POCKETSCAN_DIR/venv/bin/pip" install --upgrade pip -q
+"$POCKETSCAN_DIR/venv/bin/pip" install -r "$POCKETSCAN_DIR/requirements.txt"
 
 # ── 4. Photos directory ───────────────────────────────────────
 echo "[4/5] Creating photos directory..."
