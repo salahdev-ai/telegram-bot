@@ -50,12 +50,18 @@ def _capture_libcamera(output_path: str) -> bool:
             # -o: output file
             # --width/--height: force full res
             
-            logger.info(f"Running: {cmd} -t 2000 --autofocus-mode auto ...")
+            # Fixed focus is MUCH faster and more reliable.
+            # --lens-position is in diopters (1 / distance_in_meters)
+            # 3.3 diopters = 30 cm
+            # 2.5 diopters = 40 cm
+            # 2.0 diopters = 50 cm
+            # We use 3.0 (~33 cm) as a great default for A4 papers.
+            logger.info(f"Running: {cmd} with fixed focus at 33cm...")
             result = subprocess.run([
                 cmd,
                 "-n",
-                "-t", "2000",
-                "--autofocus-mode", "auto",
+                "-t", "1000",                  # Reduced warmup to 1s (no AF needed)
+                "--lens-position", "3.0",      # FIXED FOCUS
                 "--width", str(CAPTURE_WIDTH),
                 "--height", str(CAPTURE_HEIGHT),
                 "-q", str(JPEG_QUALITY),
