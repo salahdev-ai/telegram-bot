@@ -51,9 +51,14 @@ mkdir -p "$POCKETSCAN_DIR/photos"
 SERVICE_SRC="$POCKETSCAN_DIR/systemd/pocketscan.service"
 SERVICE_DEST="/etc/systemd/system/pocketscan.service"
 
-echo "[5/5] Installing systemd service..."
-# Patch the WorkingDirectory in the service file to actual path
-sed "s|__POCKETSCAN_DIR__|$POCKETSCAN_DIR|g" "$SERVICE_SRC" | sudo tee "$SERVICE_DEST" > /dev/null
+# Detect the real username (works with or without sudo)
+REAL_USER="${SUDO_USER:-$(whoami)}"
+
+echo "[5/5] Installing systemd service for user: $REAL_USER ..."
+sed \
+    -e "s|__POCKETSCAN_DIR__|$POCKETSCAN_DIR|g" \
+    -e "s|__USER__|$REAL_USER|g" \
+    "$SERVICE_SRC" | sudo tee "$SERVICE_DEST" > /dev/null
 
 sudo systemctl daemon-reload
 sudo systemctl enable pocketscan
