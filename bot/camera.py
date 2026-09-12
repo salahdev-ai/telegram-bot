@@ -161,6 +161,81 @@ def _capture_v4l2(output_path: str) -> bool:
 
 # ─── Public API ───────────────────────────────────────────────────────────────
 
+def check_camera() -> dict:
+    """
+    Probe available camera backends and return a status report.
+
+    Returns a dict with keys:
+        ok          bool   — True if at least one backend found a camera
+        backend     str    — 'picamera2', 'v4l2', or 'none'
+        details     list   — human-readable lines describing what was found
+        errors      list   — any error/warning messages
+    """
+    details = []
+    errors  = []
+
+    # ── picamera2 probe ───────────────────────────────────────
+    picam_ok = False
+    try:
+        from picamera2 import Picamera2
+        cams = Picamera2.global_camera_info()
+        if cams:
+            picam_ok = True
+            for i, c in enumerate(cams):
+                model = c.get("Model", "unknown")
+                loc   = c.get("Location", "")
+                details.append(f"picamera2  cam[{i}]: {model}  {loc}")
+        else:
+            errors.append("picamera2 loaded but no cameras detected")
+    except ImportError:
+        errors.append("picamera2 not installed (using V4L2 mode)")
+    except Exception as exc:
+        errors.append(f"picamera2 probe error: {exc}")
+
+    # ── V4L2 probe ────────────────────────────────────────────
+    v4l2_ok    = False
+    v4l2_devs  = []
+    try:
+        # list-devices gives human-readable names
+        result = subprocess.run(
+            ["v4l2-ctl", "--list-devices"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if result.stdout.strip():
+            v4l2_ok = True
+            for line in result.stdout.strip().splitlines():
+                v4l2_devs.append(line.strip())
+            details.append("V4L2 devices:\n    " + "\n    ".join(v4l2_devs))
+        else:
+            errors.append("v4l2-ctl found no devices")
+    except FileNotFoundError:
+        errors.append("v4l2-utils not installed (run: sudo apt install v4l-utils)")
+    except subprocess.TimeoutExpired:
+        errors.append("v4l2-ctl timed out")
+    except Exception as exc:
+        errors.append(f"V4L2 probe error: {exc}")
+
+    # ── libcamera-hello quick probe ───────────────────────────
+    try:
+        result = subprocess.run(
+            ["libcamera-hello", "--list-cameras"],
+            capture_output=True, text=True, timeout=5,
+        )
+        output = (result.stdout + result.stderr).strip()
+        if output:
+            details.append("libcamera:\n    " + "\n    ".join(output.splitlines()[:6]))
+    except FileNotFoundError:
+        pass  # libcamera-apps not installed, not critical
+    except subprocess.TimeoutExpired:
+        errors.append("libcamera-hello timed out")
+    except Exception:
+        pass
+
+    ok = picam_ok or v4l2_ok
+    backend = "picamera2" if picam_ok else ("v4l2" if v4l2_ok else "none")
+    return {"ok": ok, "backend": backend, "details": details, "errors": errors}
+
+
 def capture_photo(photo_dir: Path) -> str:
     """
     Capture a full-resolution photo using the best available backend.

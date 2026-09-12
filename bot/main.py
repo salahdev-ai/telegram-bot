@@ -11,7 +11,7 @@ from telegram.ext import (
 )
 
 from bot import config
-from bot.handlers import cmd_start, btn_take_photo
+from bot.handlers import cmd_start, btn_take_photo, btn_check_camera
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,8 @@ def main() -> None:
 
     # ── Register handlers ─────────────────────────────────────
     app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CallbackQueryHandler(btn_take_photo, pattern="^take_photo$"))
+    app.add_handler(CallbackQueryHandler(btn_take_photo,   pattern="^take_photo$"))
+    app.add_handler(CallbackQueryHandler(btn_check_camera, pattern="^check_camera$"))
 
     # ── Start polling ─────────────────────────────────────────
     logger.info(f"Bot running | Admin ID: {config.ADMIN_ID} | Photos: {config.PHOTO_DIR}")

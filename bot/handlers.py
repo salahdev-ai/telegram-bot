@@ -32,7 +32,8 @@ def admin_only(func):
 
 def _main_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📸  Take Photo", callback_data="take_photo")],
+        [InlineKeyboardButton("📸  Take Photo",    callback_data="take_photo")],
+        [InlineKeyboardButton("🔍  Check Camera",  callback_data="check_camera")],
         # More buttons added here in future phases
     ])
 
@@ -105,3 +106,58 @@ async def btn_take_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
             reply_markup=_main_keyboard(),
         )
         logger.exception("Unexpected error during capture")
+
+
+# ─── 🔍 Check Camera ──────────────────────────────────────────────────────────
+
+@admin_only
+async def btn_check_camera(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None:
+    query = update.callback_query
+    await query.answer()
+
+    status_msg = await query.message.reply_text(
+        "🔍 *Checking camera…*",
+        parse_mode=ParseMode.MARKDOWN,
+    )
+
+    try:
+        loop = asyncio.get_event_loop()
+        report = await loop.run_in_executor(None, camera.check_camera)
+
+        if report["ok"]:
+            icon    = "✅"
+            heading = f"*Camera OK* — backend: `{report['backend']}`"
+        else:
+            icon    = "❌"
+            heading = "*No camera detected!*"
+
+        lines = [f"{icon} {heading}", ""]
+
+        if report["details"]:
+            lines.append("*Details:*")
+            for d in report["details"]:
+                lines.append(f"```\n{d}\n```")
+
+        if report["errors"]:
+            lines.append("*Warnings / errors:*")
+            for e in report["errors"]:
+                lines.append(f"⚠️ `{e}`")
+
+        if not report["ok"]:
+            lines.append("")
+            lines.append("_Check: ribbon cable, dtoverlay=imx519 in config.txt, then reboot._")
+
+        await status_msg.edit_text(
+            "\n".join(lines),
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=_main_keyboard(),
+        )
+        logger.info(f"Camera check: ok={report['ok']} backend={report['backend']}")
+
+    except Exception as exc:
+        await status_msg.edit_text(
+            f"❌ *Check failed*\n\n`{exc}`",
+            parse_mode=ParseMode.MARKDOWN,
+            reply_markup=_main_keyboard(),
+        )
+        logger.exception("Camera check error")
