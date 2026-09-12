@@ -10,8 +10,6 @@ User=__USER__
 WorkingDirectory=__POCKETSCAN_DIR__
 ExecStart=__POCKETSCAN_DIR__/venv/bin/python3 -m bot.main
 EnvironmentFile=__POCKETSCAN_DIR__/.env
-Environment=PYTHONPATH=__POCKETSCAN_DIR__
-Environment=PATH=/home/__USER__/.local/bin:/usr/local/bin:/usr/bin:/bin
 Restart=always
 RestartSec=5
 StartLimitBurst=5
