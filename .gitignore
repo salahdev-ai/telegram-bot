@@ -1,0 +1,16 @@
+.env
+photos/
+*.jpg
+*.jpeg
+*.png
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,20 @@
+[Unit]
+Description=PocketScan Telegram Camera Bot
+Documentation=https://github.com/youruser/pocketscan
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=__POCKETSCAN_DIR__
+ExecStart=/usr/bin/python3 bot/main.py
+EnvironmentFile=__POCKETSCAN_DIR__/.env
+Restart=always
+RestartSec=5
+# Give the network extra time before the first start
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Install]
+WantedBy=multi-user.target
