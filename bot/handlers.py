@@ -76,18 +76,36 @@ async def btn_take_photo(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> None
             config.PHOTO_DIR,
         )
 
-        # Delete the "waiting" message and send the photo
+        # ── Delete the "waiting" message ──────────────────────
         await status_msg.delete()
+
+        fname = Path(photo_path).name
+
+        # ── 1. Send compressed inline preview ──────────────────
+        # Telegram compresses photos sent via reply_photo, but they
+        # appear inline and are instant to view in chat.
         with open(photo_path, "rb") as f:
-            await query.message.reply_document(
-                document=InputFile(f, filename=Path(photo_path).name),
+            await query.message.reply_photo(
+                photo=f,
                 caption=(
-                    "✅ *Scan complete!*\n"
-                    f"📁 `{Path(photo_path).name}`\n"
-                    f"📐 4656 × 3496 px  |  JPEG 95"
+                    "📸 *Preview* _(compressed by Telegram)_\n"
+                    "⬇️ Full quality file below ↓"
                 ),
                 parse_mode=ParseMode.MARKDOWN,
-                reply_markup=_main_keyboard(),   # show buttons again
+            )
+
+        # ── 2. Send original full-quality file ─────────────────
+        # reply_document = zero compression, original bytes, full 16MP
+        with open(photo_path, "rb") as f:
+            await query.message.reply_document(
+                document=InputFile(f, filename=fname),
+                caption=(
+                    "✅ *Full Quality Scan*\n"
+                    f"📁 `{fname}`\n"
+                    f"📐 4656 × 3496 px  •  JPEG 95  •  16 MP"
+                ),
+                parse_mode=ParseMode.MARKDOWN,
+                reply_markup=_main_keyboard(),
             )
         logger.info(f"Photo sent to user {query.from_user.id}: {photo_path}")
 
